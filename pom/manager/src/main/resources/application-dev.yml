@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: 'jdbc:mysql://192.168.2.127:3306/culture?createDatabaseIfNotExist=true'
+    username: 'root'
+    password: 'damei2018'
+mapper: 
+  mappers: 'com.shandong.culture.manager.common.config.TkMapper'
+  identity: 'mysql'
+  notEmpty: 'false'
+  use-simple-type: 'false'
+logging:
+  config: classpath:logback.xml
