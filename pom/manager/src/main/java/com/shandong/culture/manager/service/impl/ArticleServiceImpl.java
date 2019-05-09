@@ -1,7 +1,8 @@
 package com.shandong.culture.manager.service.impl;
 
 import com.shandong.culture.manager.entity.Article;
-import com.shandong.culture.manager.mapper.ArticleMapper;
+//import com.shandong.culture.manager.mapper.ArticleMapper;
+import com.shandong.culture.manager.repository.ArticleRepository;
 import com.shandong.culture.manager.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,16 +13,16 @@ import org.springframework.stereotype.Service;
  **/
 @Service
 public class ArticleServiceImpl implements ArticleService {
-    @Autowired
-    ArticleMapper articleMapper;
+	@Autowired
+	private ArticleRepository articleMapper;
 
-    @Override
-    public Article findArticleById(Article article) {
-        return articleMapper.selectByPrimaryKey(13);
-    }
+	@Override
+	public Article findArticleById(Article article) {
+		return articleMapper.findById(13L).orElse(null);
+	}
 
-    @Override
-    public void saveArticle(Article article) {
-        articleMapper.insert(article);
-    }
+	@Override
+	public Article saveArticle(Article article) {
+		return articleMapper.save(article);
+	}
 }

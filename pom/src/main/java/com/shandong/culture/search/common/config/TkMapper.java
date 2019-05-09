@@ -1,4 +1,4 @@
-package com.shandong.culture.manager.common.config;
+package com.shandong.culture.search.common.config;
 
 import tk.mybatis.mapper.common.Mapper;
 import tk.mybatis.mapper.common.MySqlMapper;

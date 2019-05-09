@@ -14,5 +14,5 @@ public interface ArticleService {
 
     Article findArticleById(Article article);
 
-    void saveArticle(Article article);
+    Article saveArticle(Article article);
 }

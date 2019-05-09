@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: 'jdbc:mariadb://localhost:3306/culture?createDatabaseIfNotExist=true'
+    username: 'root'
+    password: 'admin123456!@#'    
+  jpa:
+    show-sql: true
+    database-platform: 'org.hibernate.dialect.MariaDB103Dialect'
+mapper: 
+  mappers: 'com.shandong.culture.manager.common.config.TkMapper'
+  identity: 'mysql'
+  notEmpty: 'false'
+  use-simple-type: 'false'

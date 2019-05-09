@@ -3,10 +3,11 @@ package com.shandong.culture.manager.web;
 import com.shandong.culture.manager.entity.Article;
 import com.shandong.culture.manager.service.ArticleService;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -15,22 +16,22 @@ import org.springframework.web.bind.annotation.RestController;
  **/
 @Api("文章")
 @RestController
+@RequestMapping("articles")
 public class ArticleController {
-    @Autowired
-    ArticleService articleService;
+	@Autowired
+	private ArticleService articleService;
 
+	@GetMapping("{id}")
+	public Article findById(@PathVariable("id") Long id) {
+		Article article = new Article();
+		article.setId(13L);
+		return articleService.findArticleById(article);
+	}
 
-    @RequestMapping(value = "/findById", method = RequestMethod.GET)
-    public Article findById() {
-        Article article = new Article();
-        article.setId(13L);
-        return articleService.findArticleById(article);
-    }
-
-    @RequestMapping(value = "save", method = RequestMethod.POST)
-    public void save() {
-        Article article = new Article();
-        article.setId(13L);
-        articleService.saveArticle(article);
-    }
+	@PostMapping
+	public Article save() {
+		Article article = new Article();
+		article.setId(14L);
+		return articleService.saveArticle(article);
+	}
 }
