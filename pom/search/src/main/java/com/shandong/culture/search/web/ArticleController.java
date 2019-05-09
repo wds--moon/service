@@ -1,6 +1,8 @@
 package com.shandong.culture.search.web;
 
+import com.shandong.culture.search.entity.Article;
 import com.shandong.culture.search.formvo.ArticleForm;
+import com.shandong.culture.search.formvo.ArticleSearchFrom;
 import com.shandong.culture.search.model.ResponseVO;
 import com.shandong.culture.search.service.ArticleService;
 import io.swagger.annotations.Api;
@@ -20,46 +22,52 @@ import org.springframework.web.bind.annotation.*;
  * @Version: 1.0
  */
 @Api("文章处理类")
-@RequestMapping("article")
+@RequestMapping("articles")
 @RestController
 public class ArticleController {
 
     private final static Logger LOG = LoggerFactory.getLogger(ArticleController.class);
 
     @Autowired
-    ArticleService articleService;
+    private ArticleService articleService;
 
 
     @ApiOperation(value = "保存文章", notes = "保存文章")
-    @RequestMapping(value = "/save", method = RequestMethod.POST)
-    public ResponseVO saveArticleInfo(@RequestBody ArticleForm article) {
-        LOG.info("{}", article);
+    @PostMapping(value = "/save")
+    public ResponseVO saveArticleInfo(@RequestBody Article article) {
         articleService.save(article);
         return ResponseVO.success();
     }
 
     @ApiOperation(value = "修改文章", notes = "修改文章")
-    @RequestMapping(value = "/update", method = RequestMethod.PUT)
+    @PutMapping(value = "/update")
     public ResponseVO updateArticleInfo() {
         return ResponseVO.success();
     }
 
     @ApiOperation(value = "删除文章", notes = "删除文章")
-    @RequestMapping(value = "/delete/{id}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = "/delete/{id}")
     public ResponseVO deleteArticleInfo(@PathVariable("id") String id) {
         articleService.delete(id);
         return ResponseVO.success();
     }
 
     @ApiOperation(value = "条件查询文章", notes = "条件查询文章")
-    @RequestMapping(value = "/findArticle", method = RequestMethod.POST)
-    public ResponseVO deleteArticleInfo(@RequestBody ArticleForm article) {
+    @GetMapping(value = "/findArticle")
+    public ResponseVO findArticle(ArticleForm article) {
         return articleService.findArticle(article);
     }
 
     @ApiOperation(value = "模糊搜索", notes = "模糊搜索")
-    @RequestMapping(value = "/matchQueryArticle", method = RequestMethod.POST)
-    public ResponseVO matchQueryArticle(@RequestBody ArticleForm article) {
+    @GetMapping(value = "/matchQueryArticle")
+    public ResponseVO matchQueryArticle(ArticleForm article) {
         return articleService.matchQueryArticle(article);
+    }
+
+
+    @ApiOperation(value = "全文搜索", notes = "全文搜索")
+    @GetMapping(value = "/searchArticle")
+    public ResponseVO searchArticle(ArticleSearchFrom article) {
+        return articleService.searchArticle(article);
     }
 }

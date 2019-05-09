@@ -3,6 +3,7 @@ package com.shandong.culture.search.service;
 import com.shandong.culture.search.common.constant.EsEnum;
 import com.shandong.culture.search.entity.Article;
 import com.shandong.culture.search.formvo.ArticleForm;
+import com.shandong.culture.search.formvo.ArticleSearchFrom;
 import com.shandong.culture.search.model.ResponseVO;
 import org.elasticsearch.search.SearchHit;
 import org.nlpcn.es4sql.exception.SqlParseException;
@@ -21,14 +22,32 @@ import java.util.Map;
  */
 public interface ArticleService {
 
-    void save(ArticleForm article);
+    void save(Article article);
 
     void update(ArticleForm article);
 
     void delete(String articleId);
 
+    /**
+     * 按照关键字段匹配
+     * @param article
+     * @return
+     */
     ResponseVO findArticle(ArticleForm article);
 
+    /**
+     * 按照类型,名称,内容检索
+     * @param article
+     * @return
+     */
     ResponseVO matchQueryArticle(ArticleForm article);
+
+    /**
+     * 全文检索
+     * @param articleSearchFrom
+     * @return
+     */
+    ResponseVO searchArticle(ArticleSearchFrom articleSearchFrom);
+
 
 }

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.shandong.culture.search.common.constant.EsEnum;
 import com.shandong.culture.search.entity.Article;
 import com.shandong.culture.search.formvo.ArticleForm;
+import com.shandong.culture.search.formvo.ArticleSearchFrom;
 import com.shandong.culture.search.mapper.ArticleMapper;
 import com.shandong.culture.search.model.ResponseVO;
 import com.shandong.culture.search.service.ArticleService;
@@ -33,34 +34,43 @@ import java.util.Map;
 public class ArticleServiceImpl implements ArticleService {
 
     @Autowired
-    ElasticSearchService elasticSearchService;
+    private ElasticSearchService elasticSearchService;
     @Autowired
-    ArticleMapper articleMapper;
+    private ArticleMapper articleMapper;
     @Autowired
-    TransportClient transportClient;
+    private TransportClient transportClient;
 
     @Override
-    public void save(ArticleForm article) {
-        Article info = getArticle(article);
-        articleMapper.insert(info);
-        elasticSearchService.insertById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), String.valueOf(info.getId()), JSON.toJSONString(info));
+    public void save(Article article) {
+        articleMapper.insert(article);
+        elasticSearchService.insertById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), String.valueOf(article.getId()), JSON.toJSONString(article));
 
     }
 
     /**
-     * 数据转换
+     * 数据转换,专门用于新增,编辑
      *
      * @param article
      * @return
      */
     private Article getArticle(ArticleForm article) {
         Article info = new Article();
-        info.setContext(article.getContext());
+        info.setResourceClassification(article.getResourceClassification());
+        info.setResourceNumber(article.getResourceNumber());
+        info.setResourceType(article.getResourceType());
+        info.setResourceName(article.getResourceName());
+        info.setResourceLable(article.getResourceLable());
+        info.setGeographicalLocation(article.getGeographicalLocation());
+        info.setResourceQuantity(article.getResourceQuantity());
+        info.setRegion(article.getRegion());
+        info.setYears(article.getYears());
+        info.setAreaCovered(article.getAreaCovered());
+        info.setGrade(article.getGrade());
         info.setCreateTime(LocalDateTime.now());
         info.setLastUpdate(LocalDateTime.now());
-        info.setTitle(article.getTitle());
-        info.setLable(article.getLable());
+        info.setAttUrl(article.getAttUrl());
         info.setImgUrl(article.getImgUrl());
+        info.setContext(article.getContext());
         return info;
     }
 
@@ -76,10 +86,10 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public ResponseVO findArticle(ArticleForm article) {
-        StringBuilder sql = new StringBuilder("select * from").append(EsEnum.INDEX.getValue());
+        StringBuilder sql = new StringBuilder("select * from ").append(EsEnum.INDEX.getValue());
         sql.append(" where  1=1 ");
-        if (StringUtils.isNotEmpty(article.getTitle())) {
-            sql.append(" and title ='").append(article.getTitle()).append("'");
+        if (StringUtils.isNotEmpty(article.getResourceName())) {
+            sql.append(" and title ='").append(article.getResourceName()).append("'");
         }
         sql.append(" limit ").append(article.getPageNum()).append(" , ").append(article.getPageSize());
         SearchHits response = null;
@@ -96,12 +106,56 @@ public class ArticleServiceImpl implements ArticleService {
 
         StringBuilder sql = new StringBuilder("select * from ").append(EsEnum.INDEX.getValue());
         sql.append(" where  1=1 ");
-        if (StringUtils.isNotEmpty(article.getTitle())) {
-            sql.append(" and title = matchQuery('").append(article.getTitle()).append("')");
+        /**
+         * 如果存在资源分类,那么必须指定为死值,固定有一个分类匹配
+         */
+        if (StringUtils.isNotEmpty(article.getResourceClassification())) {
+            sql.append(" and resourceName = '").append(article.getResourceClassification()).append("'");
+        }
+
+        if (StringUtils.isNotEmpty(article.getResourceName())) {
+            sql.append(" and resourceName = matchQuery('").append(article.getResourceName()).append("')");
         }
         if (StringUtils.isNotEmpty(article.getContext())) {
             sql.append(" and  context = matchQuery('").append(article.getContext()).append("')");
         }
+        if (StringUtils.isNotEmpty(article.getResourceLable())) {
+            sql.append(" and  resourceLable = matchQuery('").append(article.getResourceLable()).append("')");
+        }
+        sql.append(" limit ").append(article.getPageNum()).append(" , ").append(article.getPageSize());
+        SearchHits response = null;
+        try {
+            response = query(sql.toString());
+        } catch (Exception e) {
+            return null;
+        }
+        return ResponseVO.success(setListMap(response), article.getPageNum(), article.getPageSize(), response.totalHits);
+    }
+
+    @Override
+    public ResponseVO searchArticle(ArticleSearchFrom article) {
+        StringBuilder sql = new StringBuilder("select * from ").append(EsEnum.INDEX.getValue());
+        sql.append(" where  1=1 ");
+        /**
+         * 如果存在资源分类,那么必须指定为死值,固定有一个分类匹配
+         */
+        if (StringUtils.isNotEmpty(article.getResourceClassification())) {
+            sql.append(" and resourceName = '").append(article.getResourceClassification()).append("'");
+        }
+        /**
+         * 检索关键字按照名称,标签,内容,进行全文匹配
+         */
+        if (StringUtils.isNotEmpty(article.getKeyword())) {
+            sql.append(" and (resourceName = score(matchQuery('").append(article.getKeyword()).append("'),100)");
+            sql.append(" or  resourceLable = score(matchQuery('").append(article.getKeyword()).append("'),50)");
+            sql.append(" or  geographicalLocation = score(matchQuery('").append(article.getKeyword()).append("'),10)");
+            sql.append(" or  region = score(matchQuery('").append(article.getKeyword()).append("'),10)");
+            sql.append(" or  years = score(matchQuery('").append(article.getKeyword()).append("'),10)");
+            sql.append(" or  areaCovered = score(matchQuery('").append(article.getKeyword()).append("'),10)");
+            sql.append(" or  grade = score(matchQuery('").append(article.getKeyword()).append("'),10)");
+            sql.append(" or  context = score(matchQuery('").append(article.getKeyword()).append("'),1))");
+        }
+        sql.append(" order by _score desc  ");
         sql.append(" limit ").append(article.getPageNum()).append(" , ").append(article.getPageSize());
         SearchHits response = null;
         try {
