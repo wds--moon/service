@@ -7,6 +7,7 @@ import com.shandong.culture.search.formvo.ArticleSearchFrom;
 import com.shandong.culture.search.model.ResponseVO;
 import org.elasticsearch.search.SearchHit;
 import org.nlpcn.es4sql.exception.SqlParseException;
+import org.springframework.data.domain.Page;
 
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Map;
@@ -30,20 +31,12 @@ public interface ArticleService {
 
 
     /**
-     * 按照关键字段匹配
-     *
-     * @param article
-     * @return
-     */
-    ResponseVO findArticle(ArticleForm article);
-
-    /**
      * 按照类型,名称,内容检索
      *
      * @param article
      * @return
      */
-    ResponseVO matchQueryArticle(ArticleForm article);
+    Page<Article> matchQueryArticle(ArticleForm article);
 
     /**
      * 全文检索
@@ -51,7 +44,6 @@ public interface ArticleService {
      * @param articleSearchFrom
      * @return
      */
-    ResponseVO searchArticle(ArticleSearchFrom articleSearchFrom);
-
+    Page<Article> searchArticle(ArticleSearchFrom articleSearchFrom);
 
 }

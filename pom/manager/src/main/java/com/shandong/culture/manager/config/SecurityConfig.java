@@ -1,8 +1,12 @@
 package com.shandong.culture.manager.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,6 +17,11 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import com.dm.security.verification.VerificationCodeFilter;
+import com.dm.security.verification.VerificationCodeStorage;
+import com.dm.security.verification.support.SessionScopeVerificationCodeStorage;
 
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -33,8 +42,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		// http.authorizeRequests().antMatchers(HttpMethod.POST,
 		// "/login").hasAnyRole("ADMIN", "USER").anyRequest()
 		// .authenticated().and()
+		// 以下地址不需要认证
 		http.authorizeRequests()
-				.antMatchers("/login.html**", "/", "/index.html", "/favicon.ico", "/fonts/**", "/css/**", "/js/**")
+				.antMatchers(
+						"/login.html**",
+						"/members/registry**",
+						"/members/userVerification**",
+						"/verificationCode**/**")
 				.permitAll();
 		http.authorizeRequests().antMatchers("/h2-console**/**").permitAll();
 		// 因为h2-console使用了frame,spring security默认是不允许frame访问的
@@ -80,6 +94,37 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Bean
 	public ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEventPublisher() {
 		return new ServletListenerRegistrationBean<HttpSessionEventPublisher>(new HttpSessionEventPublisher());
+	}
+
+	@Bean
+	public FilterRegistrationBean<VerificationCodeFilter> filterRegistrationBean() {
+		FilterRegistrationBean<VerificationCodeFilter> filter = new FilterRegistrationBean<VerificationCodeFilter>();
+		filter.setFilter(verificationCodeFilter());
+		filter.addUrlPatterns("/members/registry");
+		return filter;
+	}
+
+	/**
+	 * 验证码过滤器
+	 * 
+	 * @return
+	 */
+	@Bean
+	public VerificationCodeFilter verificationCodeFilter() {
+		VerificationCodeFilter filter = new VerificationCodeFilter();
+		filter.requestMatcher(new AntPathRequestMatcher("/members/registry**", HttpMethod.POST.toString()));
+		return filter;
+	}
+
+	/**
+	 * 验证码存储
+	 * 
+	 * @return
+	 */
+	@Bean
+	@Scope(value = "session", proxyMode = ScopedProxyMode.INTERFACES)
+	public VerificationCodeStorage verificationCodeStorage() {
+		return new SessionScopeVerificationCodeStorage();
 	}
 
 }

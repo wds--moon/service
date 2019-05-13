@@ -2,8 +2,13 @@ package com.shandong.culture.search.entity;
 
 import java.time.LocalDateTime;
 import javax.persistence.*;
-import lombok.Data;
 
+import lombok.Data;
+import org.springframework.data.elasticsearch.annotations.*;
+
+@Document(indexName = "shandong", type = "culture")
+@Setting(settingPath = "/json/setting.json")
+@Mapping(mappingPath = "/json/mapper.json")
 @Table(name = "`t_article`")
 @Data
 public class Article {
@@ -104,6 +109,7 @@ public class Article {
     /**
      * 正文内容
      */
+//    @Field(type = FieldType.Text, searchAnalyzer = "ikSearchAnalyzer", analyzer = "ikSearchAnalyzer")
     @Column(name = "`context`")
     private String context;
 }

@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="Maven: com.dm:dm-common:0.2.0-SNAPSHOT">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/dm/dm-common/0.2.0-SNAPSHOT/dm-common-0.2.0-20190507.062807-7.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/dm/dm-common/0.2.0-SNAPSHOT/dm-common-0.2.0-20190510.033225-9.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/com/dm/dm-common/0.2.0-SNAPSHOT/dm-common-0.2.0-20190507.062807-7-javadoc.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/dm/dm-common/0.2.0-SNAPSHOT/dm-common-0.2.0-20190510.033225-9-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/dm/dm-common/0.2.0-SNAPSHOT/dm-common-0.2.0-20190507.062807-7-sources.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/dm/dm-common/0.2.0-SNAPSHOT/dm-common-0.2.0-20190510.033225-9-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

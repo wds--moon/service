@@ -30,7 +30,7 @@
         </commentGenerator>
         <!--数据库链接URL，用户名、密码 -->
         <jdbcConnection driverClass="com.mysql.jdbc.Driver"
-                        connectionURL="jdbc:mysql://192.168.2.127:3306/culture" userId="root" password="damei2018">
+                        connectionURL="jdbc:mysql://10.10.1.127:3306/culture" userId="root" password="damei2018">
         </jdbcConnection>
         <javaTypeResolver>
             <!-- 此属性用于指定MyBatis生成器是否应该强制使用java.math。十进制和数字字段的BigDecimal-->
@@ -40,10 +40,10 @@
         </javaTypeResolver>
         <!-- 要生成哪些表 -->
         <javaModelGenerator targetPackage="com.shandong.culture.manager.entity" targetProject="src/main/java"/>
-        <sqlMapGenerator targetPackage="com.shandong.culture.manager.mapper" targetProject="src/main/resources"/>
-        <javaClientGenerator targetPackage="com.shandong.culture.manager.mapper" targetProject="src/main/java"
-                             type="XMLMAPPER"/>
-        <table tableName="t_article" domainObjectName="Article" enableCountByExample="false"
+        <!--<sqlMapGenerator targetPackage="com.shandong.culture.manager.mapper" targetProject="src/main/resources"/>-->
+        <!--  <javaClientGenerator targetPackage="com.shandong.culture.manager.mapper" targetProject="src/main/java"
+                               type="XMLMAPPER"/>-->
+        <table tableName="t_article_collection" domainObjectName="ArticleCollection" enableCountByExample="false"
                enableUpdateByExample="false" enableDeleteByExample="false" enableSelectByExample="false"
                selectByExampleQueryId="false">
 
@@ -53,7 +53,7 @@
             <!--<columnOverride     column="date" javaType="java.time.LocalDate"   jdbcType="date" typeHandler="org.apache.ibatis.type.LocalDateTypeHandler"  delimitedColumnName="false" />-->
             <!--<columnOverride     column="time" javaType="java.time.LocalTime"   jdbcType="time" typeHandler="org.apache.ibatis.type.LocalDateTypeHandler"  delimitedColumnName="false" />-->
             <columnOverride     column="create_time" javaType="java.time.LocalDateTime"   jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTypeHandler"  delimitedColumnName="false" />
-            <columnOverride     column="last_update" javaType="java.time.LocalDateTime"   jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTypeHandler"  delimitedColumnName="false" />
+            <columnOverride     column="deal_time" javaType="java.time.LocalDateTime"   jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTypeHandler"  delimitedColumnName="false" />
         </table>
     </context>
 </generatorConfiguration>

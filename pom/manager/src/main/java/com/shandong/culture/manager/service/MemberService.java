@@ -14,4 +14,12 @@ public interface MemberService {
 
 	public Page<Member> find(String keywords, Pageable pageable);
 
+	/**
+	 * 检测指定用户名是否被占用
+	 * 
+	 * @param username
+	 * @return
+	 */
+	public Boolean existByUsername(String username);
+
 }

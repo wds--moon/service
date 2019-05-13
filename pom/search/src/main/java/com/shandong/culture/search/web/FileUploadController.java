@@ -20,7 +20,7 @@ import java.util.Map;
  **/
 @Api("文件上传处理类")
 @RestController
-@RequestMapping("/upload")
+@RequestMapping("/uploads")
 public class FileUploadController {
 
 
@@ -28,16 +28,16 @@ public class FileUploadController {
     StorageService storageService;
 
     @ApiOperation(value = "上传图片", notes = "上传图片")
-    @PostMapping("/img")
-    public ResponseVO handelImgUpload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+    @PostMapping(params = {"img"})
+    public Map<String, String> handelImgUpload(@RequestParam("img") MultipartFile file, RedirectAttributes redirectAttributes) {
         Map<String, String> map = storageService.storeImg(file);
-        return ResponseVO.success(map);
+        return map;
     }
 
-    @ApiOperation(value = "删除附件", notes = "删除附件")
-    @PostMapping("/zip")
-    public ResponseVO handelZipUpload(@RequestParam("file") MultipartFile file) {
+    @ApiOperation(value = "上传附件", notes = "上传附件")
+    @PostMapping(params = {"zip"})
+    public String handelZipUpload(@RequestParam("zip") MultipartFile file) {
         String s = storageService.storeZip(file);
-        return ResponseVO.success(s);
+        return s;
     }
 }

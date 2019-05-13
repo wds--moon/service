@@ -1,5 +1,6 @@
 package com.shandong.culture.search.web;
 
+import com.dm.common.dto.TableResult;
 import com.shandong.culture.search.entity.Article;
 import com.shandong.culture.search.formvo.ArticleForm;
 import com.shandong.culture.search.formvo.ArticleSearchFrom;
@@ -10,6 +11,10 @@ import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -33,42 +38,39 @@ public class ArticleController {
 
 
     @ApiOperation(value = "保存文章", notes = "保存文章")
-    @PostMapping(value = "/save")
-    public ResponseVO saveArticleInfo(@RequestBody Article article) {
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Article saveArticleInfo(@RequestBody Article article) {
         articleService.save(article);
-        return ResponseVO.success();
+        return article;
     }
 
     @ApiOperation(value = "修改文章", notes = "修改文章")
-    @PutMapping(value = "/update")
-    public ResponseVO updateArticleInfo(@RequestBody Article article) {
+    @PutMapping(value = "{id}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Article updateArticleInfo(@PathVariable("id") String id, @RequestBody Article article) {
         articleService.update(article);
-        return ResponseVO.success();
+        return article;
     }
 
     @ApiOperation(value = "删除文章", notes = "删除文章")
-    @DeleteMapping(value = "/delete/{id}")
-    public ResponseVO deleteArticleInfo(@PathVariable("id") String id) {
+    @DeleteMapping(value = "{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteArticleInfo(@PathVariable("id") String id) {
         articleService.delete(id);
-        return ResponseVO.success();
     }
 
-    @ApiOperation(value = "条件查询文章", notes = "条件查询文章")
-    @GetMapping(value = "/findArticle")
-    public ResponseVO findArticle(ArticleForm article) {
-        return articleService.findArticle(article);
-    }
-
-    @ApiOperation(value = "模糊搜索", notes = "模糊搜索")
-    @GetMapping(value = "/matchQueryArticle")
-    public ResponseVO matchQueryArticle(ArticleForm article) {
-        return articleService.matchQueryArticle(article);
+    @ApiOperation(value = "模糊搜索,条件查询文章", notes = "模糊搜索,条件查询文章")
+    @GetMapping(params = {"draw", "!keyword"})
+    public TableResult<Article> matchQueryArticle(@RequestParam("draw") Long draw, ArticleForm article) {
+        return TableResult.success(draw, articleService.matchQueryArticle(article));
     }
 
 
     @ApiOperation(value = "全文搜索", notes = "全文搜索")
-    @GetMapping(value = "/searchArticle")
-    public ResponseVO searchArticle(ArticleSearchFrom article) {
-        return articleService.searchArticle(article);
+    @GetMapping("/searchArticle")
+    public TableResult<Article> searchArticle(@RequestParam("draw") Long draw, ArticleSearchFrom article) {
+        return TableResult.success(draw, articleService.searchArticle(article));
     }
+
 }

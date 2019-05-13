@@ -2,10 +2,13 @@ package com.shandong.culture.search.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.shandong.culture.search.common.constant.EsEnum;
+import com.shandong.culture.search.common.util.ChineseCharacterUtil;
 import com.shandong.culture.search.entity.Article;
+import com.shandong.culture.search.entity.ArticleVersion;
 import com.shandong.culture.search.formvo.ArticleForm;
 import com.shandong.culture.search.formvo.ArticleSearchFrom;
 import com.shandong.culture.search.mapper.ArticleMapper;
+import com.shandong.culture.search.mapper.ArticleVersionMapper;
 import com.shandong.culture.search.model.ResponseVO;
 import com.shandong.culture.search.service.ArticleService;
 import com.shandong.culture.search.service.ElasticSearchService;
@@ -14,16 +17,22 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.nlpcn.es4sql.SearchDao;
 import org.nlpcn.es4sql.exception.SqlParseException;
 import org.nlpcn.es4sql.query.SqlElasticSearchRequestBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLFeatureNotSupportedException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,14 +48,41 @@ public class ArticleServiceImpl implements ArticleService {
     @Autowired
     private ArticleMapper articleMapper;
     @Autowired
+    ArticleVersionMapper articleVersionMapper;
+    @Autowired
     private TransportClient transportClient;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void save(Article article) {
+        String pingyin = ChineseCharacterUtil.convertHanzi2Pinyin(article.getResourceNumber() + article.getGeographicalLocation(), false).toUpperCase();
+        getVersionIndex(article, pingyin);
         articleMapper.insert(article);
         elasticSearchService.insertById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), String.valueOf(article.getId()), JSON.toJSONString(article));
 
+    }
+
+    /**
+     * 获取前缀编号最大的自增id,并且修改当前前缀的version
+     *
+     * @param article
+     * @param pingyin
+     */
+    private void getVersionIndex(Article article, String pingyin) {
+        ArticleVersion version = new ArticleVersion();
+        version.setResourceNum(pingyin);
+        ArticleVersion resVersion = articleVersionMapper.selectOne(version);
+        if (resVersion != null) {
+            Integer incc = resVersion.getVersion() + 1;
+            article.setResourceNumber(pingyin + incc);
+            resVersion.setVersion(incc);
+            articleVersionMapper.updateByPrimaryKey(resVersion);
+        } else {
+            version.setVersion(1);
+            article.setResourceNumber(pingyin + 1);
+            articleVersionMapper.insert(version);
+
+        }
     }
 
 
@@ -80,6 +116,8 @@ public class ArticleServiceImpl implements ArticleService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void update(Article article) {
+        String pingyin = ChineseCharacterUtil.convertHanzi2Pinyin(article.getResourceNumber() + article.getGeographicalLocation(), false).toLowerCase();
+        getVersionIndex(article, pingyin);
         articleMapper.updateByPrimaryKey(article);
         elasticSearchService.updateById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), String.valueOf(article.getId()), JSON.toJSONString(article));
     }
@@ -87,30 +125,14 @@ public class ArticleServiceImpl implements ArticleService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void delete(String id) {
-        articleMapper.deleteByPrimaryKey(id);
+        Article info = new Article();
+        info.setId(Long.parseLong(id));
+        articleMapper.delete(info);
         elasticSearchService.deleteById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), id);
     }
 
-
     @Override
-    public ResponseVO findArticle(ArticleForm article) {
-        StringBuilder sql = new StringBuilder("select * from ").append(EsEnum.INDEX.getValue());
-        sql.append(" where  1=1 ");
-        if (StringUtils.isNotEmpty(article.getResourceName())) {
-            sql.append(" and title ='").append(article.getResourceName()).append("'");
-        }
-        sql.append(" limit ").append(article.getPageNum()).append(" , ").append(article.getPageSize());
-        SearchHits response = null;
-        try {
-            response = query(sql.toString());
-        } catch (Exception e) {
-            return null;
-        }
-        return ResponseVO.success(setListMap(response), article.getPageNum(), article.getPageSize(), response.totalHits);
-    }
-
-    @Override
-    public ResponseVO matchQueryArticle(ArticleForm article) {
+    public  Page<Article> matchQueryArticle(ArticleForm article) {
 
         StringBuilder sql = new StringBuilder("select * from ").append(EsEnum.INDEX.getValue());
         sql.append(" where  1=1 ");
@@ -122,13 +144,17 @@ public class ArticleServiceImpl implements ArticleService {
         }
 
         if (StringUtils.isNotEmpty(article.getResourceName())) {
-            sql.append(" and resourceName = matchQuery('").append(article.getResourceName()).append("')");
+            sql.append(" and (resourceName.ngram = matchQuery('").append(article.getResourceName()).append("')");
+            sql.append(" or resourceName.SPY = matchQuery('").append(article.getResourceName()).append("')");
+            sql.append(" or resourceName.FPY = matchQuery('").append(article.getResourceName()).append("'))");
         }
         if (StringUtils.isNotEmpty(article.getContext())) {
             sql.append(" and  context = matchQuery('").append(article.getContext()).append("')");
         }
         if (StringUtils.isNotEmpty(article.getResourceLable())) {
-            sql.append(" and  resourceLable = matchQuery('").append(article.getResourceLable()).append("')");
+            sql.append(" and (resourceLable.ngram = matchQuery('").append(article.getResourceName()).append("')");
+            sql.append(" or resourceLable.SPY = matchQuery('").append(article.getResourceName()).append("')");
+            sql.append(" or resourceLable.FPY = matchQuery('").append(article.getResourceName()).append("'))");
         }
         sql.append(" limit ").append(article.getPageNum()).append(" , ").append(article.getPageSize());
         SearchHits response = null;
@@ -137,12 +163,14 @@ public class ArticleServiceImpl implements ArticleService {
         } catch (Exception e) {
             return null;
         }
-        return ResponseVO.success(setListMap(response), article.getPageNum(), article.getPageSize(), response.totalHits);
+        Pageable pageable = PageRequest.of(article.getPageNum(), article.getPageSize());
+        PageImpl page = new PageImpl(setListMap(response), pageable, response.totalHits);
+        return page;
     }
 
     @Override
-    public ResponseVO searchArticle(ArticleSearchFrom article) {
-        StringBuilder sql = new StringBuilder("select * from ").append(EsEnum.INDEX.getValue());
+    public  Page<Article> searchArticle(ArticleSearchFrom article) {
+        StringBuilder sql = new StringBuilder("select /*! HIGHLIGHT(resourceName,pre_tags : ['<b>'], post_tags : ['</b>']  ) */ /*! HIGHLIGHT(context,pre_tags : ['<b>'], post_tags : ['</b>']  ) */ * from ").append(EsEnum.INDEX.getValue());
         sql.append(" where  1=1 ");
         /**
          * 如果存在资源分类,那么必须指定为死值,固定有一个分类匹配
@@ -154,8 +182,12 @@ public class ArticleServiceImpl implements ArticleService {
          * 检索关键字按照名称,标签,内容,进行全文匹配
          */
         if (StringUtils.isNotEmpty(article.getKeyword())) {
-            sql.append(" and (resourceName = score(matchQuery('").append(article.getKeyword()).append("'),100)");
-            sql.append(" or  resourceLable = score(matchQuery('").append(article.getKeyword()).append("'),50)");
+            sql.append(" and (resourceName.ngram = score(matchQuery('").append(article.getKeyword()).append("'),100)");
+            sql.append(" or resourceName.SPY = score(matchQuery('").append(article.getKeyword()).append("'),100)");
+            sql.append(" or resourceName.FPY = score(matchQuery('").append(article.getKeyword()).append("'),100)");
+            sql.append(" or  resourceLable.ngram = score(matchQuery('").append(article.getKeyword()).append("'),50)");
+            sql.append(" or  resourceLable.SPY = score(matchQuery('").append(article.getKeyword()).append("'),50)");
+            sql.append(" or  resourceLable.FPY = score(matchQuery('").append(article.getKeyword()).append("'),50)");
             sql.append(" or  geographicalLocation = score(matchQuery('").append(article.getKeyword()).append("'),10)");
             sql.append(" or  region = score(matchQuery('").append(article.getKeyword()).append("'),10)");
             sql.append(" or  years = score(matchQuery('").append(article.getKeyword()).append("'),10)");
@@ -171,13 +203,31 @@ public class ArticleServiceImpl implements ArticleService {
         } catch (Exception e) {
             return null;
         }
-        return ResponseVO.success(setListMap(response), article.getPageNum(), article.getPageSize(), response.totalHits);
+        Pageable pageable = PageRequest.of(article.getPageNum(), article.getPageSize());
+        PageImpl page = new PageImpl(setListMap(response), pageable, response.totalHits);
+        return page;
     }
 
     private List<Map<String, Object>> setListMap(SearchHits response) {
+
         List<Map<String, Object>> data = new ArrayList<>();
+        Map<String,Object> map=null;
         for (SearchHit hit : response.getHits()) {
-            data.add(hit.getSourceAsMap());
+            map=new HashMap<>();
+            map.put("id",hit.getId());
+            HighlightField centext = hit.getHighlightFields().get("context");
+            HighlightField resourceName = hit.getHighlightFields().get("resourceName");
+            if(centext!=null&&centext.getFragments()!=null){
+                map.put("context",centext.getFragments()[0].toString());
+            }else{
+                map.put("context",hit.getSourceAsMap().get("context"));
+            }
+            if(resourceName!=null&&resourceName.getFragments()!=null){
+                map.put("resourceName",resourceName.getFragments()[0].toString());
+            }else{
+                map.put("resourceName",hit.getSourceAsMap().get("resourceName"));
+            }
+            data.add(map);
         }
         return data;
     }
