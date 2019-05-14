@@ -1,17 +1,20 @@
 package com.shandong.culture.search.entity;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import javax.persistence.*;
 
 import lombok.Data;
-import org.springframework.data.elasticsearch.annotations.*;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Mapping;
+import org.springframework.data.elasticsearch.annotations.Setting;
 
 @Document(indexName = "shandong", type = "culture")
 @Setting(settingPath = "/json/setting.json")
 @Mapping(mappingPath = "/json/mapper.json")
 @Table(name = "`t_article`")
 @Data
-public class Article {
+public class Article implements Serializable {
     @Column(name = "`id`")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

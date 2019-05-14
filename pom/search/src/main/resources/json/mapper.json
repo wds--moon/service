@@ -2,55 +2,37 @@
   "properties": {
     "resourceName": {
       "type": "text",
-      "analyzer": "ikIndexAnalyzer",
+      "analyzer": "ikSearchAnalyzer",
+      "search_analyzer": "ikSearchAnalyzer",
       "fields": {
-        "ngram": {
+        "pinyin": {
           "type": "text",
-          "analyzer": "ngramIndexAnalyzer"
-        },
-        "SPY": {
-          "type": "text",
-          "analyzer": "pinyiSimpleIndexAnalyzer"
-        },
-        "FPY": {
-          "type": "text",
-          "analyzer": "pinyiFullIndexAnalyzer"
+          "analyzer": "pinyinSimpleIndexAnalyzer",
+          "search_analyzer": "pinyinSimpleIndexAnalyzer"
         }
       }
     },
     "resourceLable": {
       "type": "text",
-      "analyzer": "ikIndexAnalyzer",
+      "analyzer": "ikSearchAnalyzer",
+      "search_analyzer": "ikSearchAnalyzer",
       "fields": {
-        "ngram": {
+        "pinyin": {
           "type": "text",
-          "analyzer": "ngramIndexAnalyzer"
-        },
-        "SPY": {
-          "type": "text",
-          "analyzer": "pinyiSimpleIndexAnalyzer"
-        },
-        "FPY": {
-          "type": "text",
-          "analyzer": "pinyiFullIndexAnalyzer"
+          "analyzer": "pinyinSimpleIndexAnalyzer",
+          "search_analyzer": "pinyinSimpleIndexAnalyzer"
         }
       }
     },
     "geographical_location": {
       "type": "text",
-      "analyzer": "ikIndexAnalyzer",
+      "analyzer": "ikSearchAnalyzer",
+      "search_analyzer": "ikSearchAnalyzer",
       "fields": {
-        "ngram": {
+        "pinyin": {
           "type": "text",
-          "analyzer": "ngramIndexAnalyzer"
-        },
-        "SPY": {
-          "type": "text",
-          "analyzer": "pinyiSimpleIndexAnalyzer"
-        },
-        "FPY": {
-          "type": "text",
-          "analyzer": "pinyiFullIndexAnalyzer"
+          "analyzer": "pinyinSimpleIndexAnalyzer",
+          "search_analyzer": "pinyinSimpleIndexAnalyzer"
         }
       }
     }

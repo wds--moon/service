@@ -8,6 +8,7 @@ import com.shandong.culture.search.model.ResponseVO;
 import org.elasticsearch.search.SearchHit;
 import org.nlpcn.es4sql.exception.SqlParseException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Map;

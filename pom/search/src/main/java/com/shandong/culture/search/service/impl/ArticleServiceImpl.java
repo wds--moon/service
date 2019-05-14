@@ -1,17 +1,15 @@
 package com.shandong.culture.search.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.shandong.culture.search.common.constant.EsEnum;
 import com.shandong.culture.search.common.util.ChineseCharacterUtil;
+import com.shandong.culture.search.dao.ArticleDao;
 import com.shandong.culture.search.entity.Article;
 import com.shandong.culture.search.entity.ArticleVersion;
 import com.shandong.culture.search.formvo.ArticleForm;
 import com.shandong.culture.search.formvo.ArticleSearchFrom;
 import com.shandong.culture.search.mapper.ArticleMapper;
 import com.shandong.culture.search.mapper.ArticleVersionMapper;
-import com.shandong.culture.search.model.ResponseVO;
 import com.shandong.culture.search.service.ArticleService;
-import com.shandong.culture.search.service.ElasticSearchService;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
@@ -42,9 +40,8 @@ import java.util.Map;
  **/
 @Service
 public class ArticleServiceImpl implements ArticleService {
-
     @Autowired
-    private ElasticSearchService elasticSearchService;
+    ArticleDao articleDao;
     @Autowired
     private ArticleMapper articleMapper;
     @Autowired
@@ -58,7 +55,7 @@ public class ArticleServiceImpl implements ArticleService {
         String pingyin = ChineseCharacterUtil.convertHanzi2Pinyin(article.getResourceNumber() + article.getGeographicalLocation(), false).toUpperCase();
         getVersionIndex(article, pingyin);
         articleMapper.insert(article);
-        elasticSearchService.insertById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), String.valueOf(article.getId()), JSON.toJSONString(article));
+        articleDao.save(article);
 
     }
 
@@ -119,7 +116,7 @@ public class ArticleServiceImpl implements ArticleService {
         String pingyin = ChineseCharacterUtil.convertHanzi2Pinyin(article.getResourceNumber() + article.getGeographicalLocation(), false).toLowerCase();
         getVersionIndex(article, pingyin);
         articleMapper.updateByPrimaryKey(article);
-        elasticSearchService.updateById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), String.valueOf(article.getId()), JSON.toJSONString(article));
+        articleDao.index(article);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -128,11 +125,11 @@ public class ArticleServiceImpl implements ArticleService {
         Article info = new Article();
         info.setId(Long.parseLong(id));
         articleMapper.delete(info);
-        elasticSearchService.deleteById(EsEnum.INDEX.getValue(), EsEnum.TYPE.getValue(), id);
+        articleDao.deleteById(Long.parseLong(id));
     }
 
     @Override
-    public  Page<Article> matchQueryArticle(ArticleForm article) {
+    public Page<Article> matchQueryArticle(ArticleForm article) {
 
         StringBuilder sql = new StringBuilder("select * from ").append(EsEnum.INDEX.getValue());
         sql.append(" where  1=1 ");
@@ -144,17 +141,15 @@ public class ArticleServiceImpl implements ArticleService {
         }
 
         if (StringUtils.isNotEmpty(article.getResourceName())) {
-            sql.append(" and (resourceName.ngram = matchQuery('").append(article.getResourceName()).append("')");
-            sql.append(" or resourceName.SPY = matchQuery('").append(article.getResourceName()).append("')");
-            sql.append(" or resourceName.FPY = matchQuery('").append(article.getResourceName()).append("'))");
+            sql.append(" and (resourceName = matchQuery('").append(article.getResourceName()).append("')");
+            sql.append(" or resourceName.pinyin = matchQuery('").append(article.getResourceName()).append("')");
         }
         if (StringUtils.isNotEmpty(article.getContext())) {
             sql.append(" and  context = matchQuery('").append(article.getContext()).append("')");
         }
         if (StringUtils.isNotEmpty(article.getResourceLable())) {
-            sql.append(" and (resourceLable.ngram = matchQuery('").append(article.getResourceName()).append("')");
-            sql.append(" or resourceLable.SPY = matchQuery('").append(article.getResourceName()).append("')");
-            sql.append(" or resourceLable.FPY = matchQuery('").append(article.getResourceName()).append("'))");
+            sql.append(" and (resourceLable = matchQuery('").append(article.getResourceName()).append("')");
+            sql.append(" or resourceLable.pinyin = matchQuery('").append(article.getResourceName()).append("')");
         }
         sql.append(" limit ").append(article.getPageNum()).append(" , ").append(article.getPageSize());
         SearchHits response = null;
@@ -169,7 +164,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public  Page<Article> searchArticle(ArticleSearchFrom article) {
+    public Page<Article> searchArticle(ArticleSearchFrom article) {
         StringBuilder sql = new StringBuilder("select /*! HIGHLIGHT(resourceName,pre_tags : ['<b>'], post_tags : ['</b>']  ) */ /*! HIGHLIGHT(context,pre_tags : ['<b>'], post_tags : ['</b>']  ) */ * from ").append(EsEnum.INDEX.getValue());
         sql.append(" where  1=1 ");
         /**
@@ -182,12 +177,10 @@ public class ArticleServiceImpl implements ArticleService {
          * 检索关键字按照名称,标签,内容,进行全文匹配
          */
         if (StringUtils.isNotEmpty(article.getKeyword())) {
-            sql.append(" and (resourceName.ngram = score(matchQuery('").append(article.getKeyword()).append("'),100)");
-            sql.append(" or resourceName.SPY = score(matchQuery('").append(article.getKeyword()).append("'),100)");
-            sql.append(" or resourceName.FPY = score(matchQuery('").append(article.getKeyword()).append("'),100)");
-            sql.append(" or  resourceLable.ngram = score(matchQuery('").append(article.getKeyword()).append("'),50)");
-            sql.append(" or  resourceLable.SPY = score(matchQuery('").append(article.getKeyword()).append("'),50)");
-            sql.append(" or  resourceLable.FPY = score(matchQuery('").append(article.getKeyword()).append("'),50)");
+            sql.append(" and (resourceName = score(matchQuery('").append(article.getKeyword()).append("'),100)");
+            sql.append(" or resourceName.pinyin = score(matchQuery('").append(article.getKeyword()).append("'),100)");
+            sql.append(" or  resourceLable = score(matchQuery('").append(article.getKeyword()).append("'),50)");
+            sql.append(" or  resourceLable.pinyin = score(matchQuery('").append(article.getKeyword()).append("'),50)");
             sql.append(" or  geographicalLocation = score(matchQuery('").append(article.getKeyword()).append("'),10)");
             sql.append(" or  region = score(matchQuery('").append(article.getKeyword()).append("'),10)");
             sql.append(" or  years = score(matchQuery('").append(article.getKeyword()).append("'),10)");
@@ -211,21 +204,21 @@ public class ArticleServiceImpl implements ArticleService {
     private List<Map<String, Object>> setListMap(SearchHits response) {
 
         List<Map<String, Object>> data = new ArrayList<>();
-        Map<String,Object> map=null;
+        Map<String, Object> map = null;
         for (SearchHit hit : response.getHits()) {
-            map=new HashMap<>();
-            map.put("id",hit.getId());
+            map = new HashMap<>();
+            map.put("id", hit.getId());
             HighlightField centext = hit.getHighlightFields().get("context");
             HighlightField resourceName = hit.getHighlightFields().get("resourceName");
-            if(centext!=null&&centext.getFragments()!=null){
-                map.put("context",centext.getFragments()[0].toString());
-            }else{
-                map.put("context",hit.getSourceAsMap().get("context"));
+            if (centext != null && centext.getFragments() != null) {
+                map.put("context", centext.getFragments()[0].toString());
+            } else {
+                map.put("context", hit.getSourceAsMap().get("context"));
             }
-            if(resourceName!=null&&resourceName.getFragments()!=null){
-                map.put("resourceName",resourceName.getFragments()[0].toString());
-            }else{
-                map.put("resourceName",hit.getSourceAsMap().get("resourceName"));
+            if (resourceName != null && resourceName.getFragments() != null) {
+                map.put("resourceName", resourceName.getFragments()[0].toString());
+            } else {
+                map.put("resourceName", hit.getSourceAsMap().get("resourceName"));
             }
             data.add(map);
         }
